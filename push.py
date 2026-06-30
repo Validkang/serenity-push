@@ -90,6 +90,10 @@ def filter_recent_tweets(tweets, hours=36):
     cutoff = datetime.now(BEIJING_TZ) - timedelta(hours=hours)
     recent = []
     for t in tweets:
+        if isinstance(t, str):
+            # String tweets have no timestamp; include them all
+            recent.append(t)
+            continue
         created = t.get("created_at") or t.get("date") or t.get("timestamp", "")
         try:
             # Handle ISO format
@@ -109,7 +113,7 @@ def filter_recent_tweets(tweets, hours=36):
 def analyze_tweets(tweets):
     """Simple keyword-based analysis; return fund signals."""
     text = " ".join(
-        t.get("text") or t.get("content") or t.get("body") or ""
+        t if isinstance(t, str) else (t.get("text") or t.get("content") or t.get("body") or "")
         for t in tweets
     ).lower()
 
@@ -150,8 +154,10 @@ def format_message(tweets, signals):
     if tweets:
         lines.append("📢 最新动态：")
         for t in tweets[:5]:
-            text = t.get("text") or t.get("content") or ""
-            text = text[:100].replace("\n", " ")
+            if isinstance(t, str):
+                text = t[:100].replace("\n", " ")
+            else:
+                text = (t.get("text") or t.get("content") or "")[:100].replace("\n", " ")
             lines.append(f"  · {text}")
         lines.append("")
 
